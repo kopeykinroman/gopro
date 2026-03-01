@@ -4,8 +4,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"shortener/internal/storage"
 	"strings"
+
+	"github.com/kopeykinroman/gopro/internal/storage"
 )
 
 type HTTPHandlers struct {

@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	handler "shortener/internal/handler"
-	"shortener/internal/storage"
+
+	"github.com/kopeykinroman/gopro/internal/handlers"
+	"github.com/kopeykinroman/gopro/internal/storage"
 )
 
 func main() {
 	store := storage.NewStorage()
-	httpHandlers := handler.NewHTTPHandlers(store)
-	httpServer := handler.NewHTTPServer(httpHandlers)
+	httpHandlers := handlers.NewHTTPHandlers(store)
+	httpServer := handlers.NewHTTPServer(httpHandlers)
 
 	if err := httpServer.StartServer(); err != nil {
 		fmt.Println("Failed to start http server:", err)
