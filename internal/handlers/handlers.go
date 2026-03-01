@@ -6,38 +6,40 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/kopeykinroman/gopro/internal/storage"
 )
 
 type HTTPHandlers struct {
-	store *storage.Storage
+	store  *storage.Storage
+	router http.Handler
 }
 
 func NewHTTPHandlers(store *storage.Storage) *HTTPHandlers {
-	return &HTTPHandlers{
+	h := &HTTPHandlers{
 		store: store,
 	}
+
+	r := chi.NewRouter()
+
+	// POST /
+	r.MethodFunc(http.MethodPost, "/", h.handleAddShortener)
+
+	// GET /{short}
+	r.MethodFunc(http.MethodGet, "/{short:[^/]+}", h.handleGetUrl)
+
+	// Для того что бы поведение осталось старым
+	r.NotFound(h.badRequest)
+	r.MethodNotAllowed(h.handleGetUrl)
+
+	h.router = r
+
+	return h
 }
 
 // HandleRouteMethod в зависимости от типа метода вызывает подходящий обработчик
 func (h *HTTPHandlers) HandleRouteMethod(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		if r.URL.Path == "/" {
-			h.handleAddShortener(w, r)
-			return
-		}
-
-	case http.MethodGet:
-		path := strings.Trim(r.URL.Path, "/")
-		if path != "" && !strings.Contains(path, "/") {
-			h.handleGetUrl(w, r)
-			return
-		}
-	}
-
-	msg := "Bad Request. Error in Method type or Path. Received by Method [" + r.Method + "] and Path [" + r.URL.Path + "]"
-	http.Error(w, msg, http.StatusBadRequest)
+	h.router.ServeHTTP(w, r)
 }
 
 // HandleAddShortener добавляет в хранилище новый url
@@ -89,9 +91,14 @@ func (h *HTTPHandlers) handleAddShortener(w http.ResponseWriter, r *http.Request
 // Success: response := Оригинальный URL как Location и code 307
 // Error: response := code 400
 func (h *HTTPHandlers) handleGetUrl(w http.ResponseWriter, r *http.Request) {
-
 	// Извлекает оригинальный url
-	short := strings.TrimPrefix(r.URL.Path, "/")
+	short := chi.URLParam(r, "short")
+
+	if short == "" || strings.Contains(short, "/") {
+		h.badRequest(w, r)
+		return
+	}
+
 	url, err := h.store.Get(short)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -105,4 +112,11 @@ func (h *HTTPHandlers) handleGetUrl(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Location", url)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func (h *HTTPHandlers) badRequest(w http.ResponseWriter, r *http.Request) {
+	msg := "Bad Request. Error in Method type or Path. Received by Method [" +
+		r.Method + "] and Path [" + r.URL.Path + "]"
+
+	http.Error(w, msg, http.StatusBadRequest)
 }

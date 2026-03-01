@@ -13,8 +13,5 @@ func NewHTTPServer(handlers *HTTPHandlers) *HTTPServer {
 }
 
 func (s *HTTPServer) StartServer() error {
-	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, s.handlers.HandleRouteMethod)
-
-	return http.ListenAndServe(`:8080`, mux)
+	return http.ListenAndServe(`:8080`, s.handlers.router)
 }

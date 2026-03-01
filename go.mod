@@ -2,9 +2,12 @@ module github.com/kopeykinroman/gopro
 
 go 1.24.3
 
-replace github.com/kopeykinroman/gopro => C:/Users/Nerpa/Documents/GoLang/gopro
+//replace github.com/kopeykinroman/gopro => C:/Users/Nerpa/Documents/GoLang/gopro
 
-require github.com/stretchr/testify v1.11.1
+require (
+	github.com/go-chi/chi/v5 v5.2.5
+	github.com/stretchr/testify v1.11.1
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
