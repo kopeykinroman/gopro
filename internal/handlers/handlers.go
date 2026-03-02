@@ -11,30 +11,45 @@ import (
 )
 
 type HTTPHandlers struct {
-	store  *storage.Storage
-	router http.Handler
+	store   *storage.Storage
+	router  http.Handler
+	baseURL string
 }
 
-func NewHTTPHandlers(store *storage.Storage) *HTTPHandlers {
+// Добавил Functional Options Pattern что бы не исправлять код тестов
+type Option func(*HTTPHandlers)
+
+func WithBaseURL(baseURL string) Option {
+	return func(h *HTTPHandlers) {
+		h.baseURL = baseURL
+	}
+}
+
+func NewHTTPHandlers(store *storage.Storage, opts ...Option) *HTTPHandlers {
 	h := &HTTPHandlers{
-		store: store,
+		store:   store,
+		baseURL: "http://localhost:8080", // Значение по умолчанию
 	}
 
+	for _, opt := range opts {
+		opt(h)
+	}
+
+	h.initRouter()
+	return h
+
+}
+
+func (h *HTTPHandlers) initRouter() {
 	r := chi.NewRouter()
 
-	// POST /
 	r.MethodFunc(http.MethodPost, "/", h.handleAddShortener)
-
-	// GET /{short}
 	r.MethodFunc(http.MethodGet, "/{short:[^/]+}", h.handleGetUrl)
 
-	// Для того что бы поведение осталось старым
 	r.NotFound(h.badRequest)
-	r.MethodNotAllowed(h.handleGetUrl)
+	r.MethodNotAllowed(h.badRequest)
 
 	h.router = r
-
-	return h
 }
 
 // HandleRouteMethod в зависимости от типа метода вызывает подходящий обработчик
@@ -78,10 +93,11 @@ func (h *HTTPHandlers) handleAddShortener(w http.ResponseWriter, r *http.Request
 	}
 
 	shortLink := h.store.Add(url)
+	fullShortLink := h.baseURL + "/" + shortLink
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write([]byte(shortLink))
+	_, _ = w.Write([]byte(fullShortLink))
 }
 
 // HandleGetUrl по короткой ссылке возвращает исходный url

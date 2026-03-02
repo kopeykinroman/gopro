@@ -6,7 +6,7 @@
 curl -v --request POST -H "Content-Type: text/plain; charset=utf-8" -d "https://habr.ru/" http://localhost:8080/
 
 Негативный сценарий:
-curl -v --request GET -H "Content-Type: text/plain; charset=utf-8" -d "https://vlgu.ru/" http://localhost:8080/  
+curl -v --request GET -H "Content-Type: text/plain; charset=utf-8" -d "https://vlgu.ru/" http://localhost:8080/
 curl -v --request DELETE -H "Content-Type: text/plain; charset=utf-8" -d "https://mail.ru/" http://localhost:8080/
 
 # Проверка пути. Должен быть /
